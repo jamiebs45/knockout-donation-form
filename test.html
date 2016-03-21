@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Required meta tags always come first -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css" integrity="sha384-y3tfxAZXuh4HwSYylfB+J125MxIs6mR5FOHamPBG064zB+AFeWH94NdvaCBm8qnd" crossorigin="anonymous">
+</head>
+<body>
+  <h1>Hello, world!</h1>
+
+  <form id="don-form" data-bind="submit: doSubmit">
+
+  <div data-bind="foreach: amounts">
+    <div class="radio">
+      <label>
+        <input type="radio" name="predefined-amount" data-bind="checkedValue: $data, checked: $root.amount">
+        $<span data-bind="text: $data"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="radio" data-bind="visible: !isOtherAmount()">
+    <label>
+      <input type="radio" name="predefined-amount" value="0" data-bind="checked: amount">
+      Other
+    </label>
+  </div>
+
+  <fieldset class="form-group" data-bind="visible: isOtherAmount()">
+    <label for="exampleInputEmail1">Other Contribution Amount</label>
+    <input type="number" class="form-control" data-bind="value: amount" min="0">
+  </fieldset>
+  
+  <fieldset class="form-group" data-bind="visible: premiums">
+    <label for="exampleInputEmail1">Select Your Premium</label>
+    <select class="form-control" data-bind="
+    options: premiums,
+    optionsText: 'name',
+    optionsValue: 'id'"></select>
+  </fieldset>
+
+  <fieldset class="form-group">
+    <label for="exampleInputEmail1">Shipping Name</label>
+    <input type="text" class="form-control" data-bind="value: shippingName" required>
+  </fieldset>
+
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" data-bind="checked: sameAsShipping">
+      Same as Shipping
+    </label>
+  </div>
+
+  <fieldset class="form-group">
+    <label for="exampleInputEmail1">Billing Name</label>
+    <input type="text" class="form-control" data-bind="nsync: shippingName, shouldSync: sameAsShipping, disable: sameAsShipping">
+  </fieldset>
+
+      <p>
+      <input class="submit" type="submit" value="Submit">
+    </p>
+
+  <input type="hidden" name="other_amount" data-bind="value: amount">
+  <input type="hidden" name="level_id" data-bind="value: level">
+
+</form>
+
+  <!-- jQuery first, then Bootstrap JS. -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/js/bootstrap.min.js" integrity="sha384-vZ2WRJMwsjRMW/8U7i6PWi6AlO1L79snBrmgiDpgIWJ82z8eA5lenwvxbMV1PAh7" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+  <script src="http://cdn.jsdelivr.net/jquery.validation/1.15.0/jquery.validate.js"></script>
+  <script>
+
+  $("#don-form").validate();
+
+  ko.bindingHandlers.nsync = {
+    update: function(element, valueAccessor, allBindings) {
+      var shouldSync = ko.unwrap(allBindings.get("shouldSync"));
+      if(shouldSync){
+        var syncto = ko.unwrap(valueAccessor());
+        $(element).val(syncto);
+      }
+    }
+};
+
+  function DonationModel(amount, levels){
+    this.shippingName = ko.observable("");
+    this.billingName = ko.observable("");
+    this.sameAsShipping = ko.observable(false);
+    this.amounts = [25,50,75];
+    this.amount = ko.observable(amount);
+    this.doSubmit = function(formElement){
+      if ($(formElement).valid()) {
+        console.log("submit valid");
+      }
+      
+    }
+    this.isOtherAmount = ko.computed(function(){
+      if(this.amount()==0) return true;
+      for(var i=0; i<this.amounts.length; i++){
+        if(this.amounts[i]==this.amount()){
+          return false;
+        }
+      }
+      return true;
+    }, this);
+    this.premiums = ko.computed(function() {
+      for(var i=levels.length-1; i>=0; i--){
+        var level = levels[i];
+        if(this.amount() >= level.min){
+          return level.premiums;
+        }
+      } 
+    }, this);
+    this.level = ko.computed(function() {
+      for(var i=levels.length-1; i>=0; i--){
+        var level = levels[i];
+        if(this.amount() >= level.min){
+          return level.id;
+        }
+      } 
+    }, this);
+  }
+
+  var levels = [
+  {
+    id: 1, 
+    min: .01, 
+    premiums: [
+    {id: "0", name: "no gift, donation only"}, 
+    {id: "1", name: "book"}
+    ]
+  },
+  {
+    id: 2, 
+    min: 60, 
+    premiums: [
+    {id: "0", name: "no gift, donation only"}, 
+    {id: "1", name: "book"},
+    {id: "2", name: "book + cd"}
+    ]
+  },
+  ];
+  ko.applyBindings(new DonationModel(25, levels));
+
+  </script>
+</body>
+</html>
